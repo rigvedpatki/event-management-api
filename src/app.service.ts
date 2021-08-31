@@ -4,10 +4,11 @@ import { Inject, Injectable } from '@nestjs/common';
 export class AppService {
 
   constructor(
-    @Inject('APP_NAME') private readonly name: string
+    @Inject('APP_NAME') private readonly name: string,
+    @Inject('MESSAGE') private readonly message: string
   ) { }
 
   getHello(): string {
-    return `Hello World! ${this.name}`;
+    return `Hello World! ${this.name} ${this.message}`;
   }
 }
