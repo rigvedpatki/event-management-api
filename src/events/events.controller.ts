@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, ValidationPipe } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Logger, NotFoundException, Param, ParseIntPipe, Patch, Post, ValidationPipe } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Like, MoreThan, Repository } from "typeorm";
 import { CreateEventDto } from "./create-event.dto";
@@ -8,6 +8,8 @@ import { UpdateEventDto } from "./update-event.dto";
 @Controller('/events')
 export class EventsController {
 
+  private readonly logger = new Logger(EventsController.name);
+
   constructor(
     @InjectRepository(Event)
     private readonly repository: Repository<Event>
@@ -15,7 +17,10 @@ export class EventsController {
 
   @Get()
   public async findAll(): Promise<Event[]> {
-    return this.repository.find();
+    this.logger.log(`Hit the findAll route`);
+    const events = await this.repository.find();
+    this.logger.debug(`Found ${events.length} events`);
+    return events
   }
 
   @Get('/practice')
@@ -37,7 +42,11 @@ export class EventsController {
 
   @Get('/:eventId')
   public async findOne(@Param('eventId', ParseIntPipe) eventId: number): Promise<Event> {
-    return this.repository.findOne(eventId);
+    const event = await this.repository.findOne(eventId);
+    if (!event) {
+      throw new NotFoundException()
+    }
+    return event;
   }
 
   @Post()
@@ -53,6 +62,11 @@ export class EventsController {
   @Patch('/:eventId')
   public async update(@Param('eventId') eventId: string, @Body() requestBody: UpdateEventDto): Promise<Event> {
     const event = await this.repository.findOne(eventId);
+
+    if (!event) {
+      throw new NotFoundException()
+    }
+
     return this.repository.save({
       ...event,
       ...requestBody,
@@ -64,6 +78,11 @@ export class EventsController {
   @HttpCode(204)
   public async remove(@Param('eventId') eventId: string,): Promise<void> {
     const event = await this.repository.findOne(eventId);
+
+    if (!event) {
+      throw new NotFoundException()
+    }
+
     this.repository.remove(event);
   }
 }
